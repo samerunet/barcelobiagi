@@ -41,7 +41,6 @@ export function AdminDashboard() {
   const stats = useMemo(() => {
     const total = products.length;
     const lowStock = products.filter((p) => p.stock_total < p.stock_low_threshold).length;
-    const active = total - lowStock;
     const ordersToday = 127;
     const revenue = "1 847 500 ₽";
 
@@ -53,22 +52,6 @@ export function AdminDashboard() {
         icon: Package,
         color: "text-primary",
         bgColor: "bg-primary/10",
-      },
-      {
-        label: t("Мало на складе", "Low stock"),
-        value: lowStock.toString(),
-        change: lowStock > 0 ? "-1" : "0",
-        icon: AlertTriangle,
-        color: "text-warning",
-        bgColor: "bg-warning/10",
-      },
-      {
-        label: t("Активных товаров", "Active items"),
-        value: active.toString(),
-        change: "+5",
-        icon: TrendingUp,
-        color: "text-success",
-        bgColor: "bg-success/10",
       },
       {
         label: t("Всего заказов", "Total orders"),
@@ -85,6 +68,14 @@ export function AdminDashboard() {
         icon: BarChart3,
         color: "text-pink-500",
         bgColor: "bg-pink-100",
+      },
+      {
+        label: t("Мало на складе", "Low stock"),
+        value: lowStock.toString(),
+        change: lowStock > 0 ? "-1" : "0",
+        icon: AlertTriangle,
+        color: "text-warning",
+        bgColor: "bg-warning/10",
       },
     ];
   }, [products, t]);
@@ -196,7 +187,7 @@ export function AdminDashboard() {
         {/* Main content */}
         <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {stats.map((stat, index) => (
               <div
                 key={index}
