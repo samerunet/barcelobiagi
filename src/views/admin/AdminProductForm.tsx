@@ -50,6 +50,7 @@ export function AdminProductForm() {
   );
 
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [mainImageKey, setMainImageKey] = useState<string | null>(null);
 
   useEffect(() => {
     const products = loadAdminProducts();
@@ -74,18 +75,21 @@ export function AdminProductForm() {
           status: "active",
           featured: false,
         });
-        setImages(
+        const hydratedImages =
           (found.images || []).map((url) => ({
             fileUrl: url,
             fileKey: url,
             productId: id ?? null,
-          })),
-        );
+          })) || [];
+
+        setImages(hydratedImages);
+        setMainImageKey(hydratedImages[0]?.fileKey ?? null);
       }
     } else {
       // Reset for create
       setExistingProduct(null);
       setImages([]);
+      setMainImageKey(null);
     }
   }, [id, isEdit]);
 
@@ -96,6 +100,14 @@ export function AdminProductForm() {
     const stock = parseInt(formData.stock || "0", 10);
     const sizes = normalizeSizes(formData.sizes, stock);
 
+    const orderedImages =
+      mainImageKey && images.length > 0
+        ? [
+            ...images.filter((img) => img.fileKey === mainImageKey),
+            ...images.filter((img) => img.fileKey !== mainImageKey),
+          ]
+        : images;
+
     const payload: Product = {
       id: isEdit && id ? id : Date.now().toString(),
       ...formData,
@@ -104,7 +116,7 @@ export function AdminProductForm() {
       stock_low_threshold: Math.max(1, Math.floor(stock * 0.1)),
       old_price: undefined,
       currency: "RUB",
-      images: images.map((img) => img.fileUrl),
+      images: orderedImages.map((img) => img.fileUrl),
       sizes,
       tags: [],
     };
@@ -114,7 +126,15 @@ export function AdminProductForm() {
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImages((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length === 0) {
+        setMainImageKey(null);
+      } else if (prev[index]?.fileKey === mainImageKey) {
+        setMainImageKey(next[0].fileKey);
+      }
+      return next;
+    });
   };
 
   const categories = [
@@ -157,32 +177,52 @@ export function AdminProductForm() {
           </label>
           
           <div className="grid grid-cols-3 gap-3 mb-3">
-            {images.map((img, index) => (
-              <div key={index} className="relative aspect-square">
-                <img
-                  src={img.fileUrl}
-                  alt={`Product ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 p-1 bg-error text-white rounded-full shadow-md"
+            {images.map((img, index) => {
+              const isMain = img.fileKey === mainImageKey || (!mainImageKey && index === 0);
+              return (
+                <div
+                  key={img.fileKey}
+                  className="relative aspect-square rounded-xl border border-white/40 bg-white/40 backdrop-blur-md shadow-sm overflow-hidden"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-                {index === 0 && (
-                  <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-white rounded text-xs font-medium">
-                    Главное
-                  </span>
-                )}
-              </div>
-            ))}
+                  <img
+                    src={img.fileUrl}
+                    alt={`Product ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-2 -right-2 p-1 bg-error text-white rounded-full shadow-md"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  {isMain ? (
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-white rounded text-xs font-semibold shadow">
+                      Главное фото
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setMainImageKey(img.fileKey)}
+                      className="absolute bottom-2 left-2 px-2 py-0.5 bg-white/80 text-gray-900 rounded text-xs font-medium shadow hover:bg-white"
+                    >
+                      Сделать главным
+                    </button>
+                  )}
+                </div>
+              );
+            })}
             
-            <div className="aspect-square">
+            <div className="aspect-square rounded-xl border border-dashed border-white/50 bg-white/30 backdrop-blur-md flex items-center justify-center">
               <ProductImageUploader
                 productId={id}
-                onImagesChange={(uploaded) => setImages(uploaded)}
+                onImagesChange={(uploaded) => {
+                  setImages(uploaded);
+                  if (uploaded.length > 0 && !mainImageKey) {
+                    setMainImageKey(uploaded[0].fileKey);
+                  }
+                }}
               />
             </div>
           </div>
