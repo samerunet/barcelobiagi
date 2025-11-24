@@ -10,6 +10,10 @@ import {
   LogOut,
   BarChart3,
   Users,
+  LayoutDashboard,
+  Box,
+  User2,
+  HelpCircle,
 } from "lucide-react";
 import { loadAdminProducts } from "@/data/adminStore";
 import { Product } from "@/types";
@@ -38,11 +42,12 @@ export function AdminDashboard() {
     const total = products.length;
     const lowStock = products.filter((p) => p.stock_total < p.stock_low_threshold).length;
     const active = total - lowStock;
-    const ordersToday = 23;
+    const ordersToday = 127;
+    const revenue = "1 847 500 ₽";
 
     return [
       {
-        label: "Всего товаров",
+        label: t("Всего товаров", "Total products"),
         value: total.toString(),
         change: "+12",
         icon: Package,
@@ -50,7 +55,7 @@ export function AdminDashboard() {
         bgColor: "bg-primary/10",
       },
       {
-        label: "Мало на складе",
+        label: t("Мало на складе", "Low stock"),
         value: lowStock.toString(),
         change: lowStock > 0 ? "-1" : "0",
         icon: AlertTriangle,
@@ -58,7 +63,7 @@ export function AdminDashboard() {
         bgColor: "bg-warning/10",
       },
       {
-        label: "Активных товаров",
+        label: t("Активных товаров", "Active items"),
         value: active.toString(),
         change: "+5",
         icon: TrendingUp,
@@ -66,178 +71,199 @@ export function AdminDashboard() {
         bgColor: "bg-success/10",
       },
       {
-        label: "Заказов сегодня",
+        label: t("Всего заказов", "Total orders"),
         value: ordersToday.toString(),
         change: "+8",
         icon: ShoppingBag,
         color: "text-accent",
         bgColor: "bg-accent/10",
       },
+      {
+        label: t("Общий доход", "Total revenue"),
+        value: revenue,
+        change: "+4%",
+        icon: BarChart3,
+        color: "text-pink-500",
+        bgColor: "bg-pink-100",
+      },
     ];
-  }, [products]);
+  }, [products, t]);
 
   const quickActions = [
     {
-        label: "Управление товарами",
-        description: "Добавить, изменить или удалить товары",
-        icon: Package,
-        path: "/admin/inventory",
-        color: "primary",
+      label: t("Панель управления", "Dashboard"),
+      description: t("Основные метрики", "Main metrics"),
+      icon: LayoutDashboard,
+      path: "/admin/dashboard",
+      color: "primary",
     },
     {
-      label: "Заказы",
-      description: "Просмотр и управление заказами",
+      label: t("Инвентарь", "Inventory"),
+      description: t("Товары и запасы", "Products and stock"),
+      icon: Box,
+      path: "/admin/inventory",
+      color: "primary",
+    },
+    {
+      label: t("Заказы", "Orders"),
+      description: t("Просмотр и управление заказами", "Manage orders"),
       icon: ShoppingBag,
       path: "/admin/orders",
       color: "accent",
     },
     {
-      label: "Аналитика",
-      description: "Продажи и статистика",
-      icon: BarChart3,
-      path: "/admin/analytics",
+      label: t("Клиенты", "Customers"),
+      description: t("Управление аккаунтами", "Manage accounts"),
+      icon: User2,
+      path: "/admin/users",
       color: "success",
     },
     {
-      label: "Пользователи",
-      description: "Управление аккаунтами",
-      icon: Users,
-      path: "/admin/users",
+      label: t("Настройки", "Settings"),
+      description: t("Параметры панели", "Panel preferences"),
+      icon: BarChart3,
+      path: "/admin/analytics",
       color: "warning",
     },
   ];
 
+  const recentProducts = products.slice(0, 3);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-      {/* Admin Header */}
-      <header className="border-b border-white/10 backdrop-blur-md bg-white/5">
-        <div className="px-4 py-5 max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {t("Админ-панель", "Admin Panel")}
-            </h1>
-            <p className="text-sm text-white/60">BARCELO BIAGI · Иваново</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-col lg:flex-row">
+        {/* Sidebar */}
+        <aside className="w-full lg:w-72 bg-white border-r border-gray-100 px-4 py-6 flex-shrink-0">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+              BB
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">BARCELO BIAGI</h2>
+              <p className="text-xs uppercase tracking-wide text-gray-500">ADMIN PANEL</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="space-y-2 mb-6">
+            <Link
+              href="/"
+              className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition text-sm justify-center"
+            >
+              {t("Посмотреть сайт", "View site")}
+            </Link>
             <button
               onClick={() => setLanguage(language === "ru" ? "en" : "ru")}
-              className="px-3 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/20 transition text-sm font-semibold"
+              className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition text-sm justify-center"
             >
-              {language === "ru" ? "RU" : "EN"}
-            </button>
-            <Link
-              href="/"
-              className="px-3 py-2 rounded-lg bg-white text-slate-900 font-semibold hover:bg-slate-100 transition shadow"
-            >
-              {t("Вернуться в магазин", "View store")}
-            </Link>
-            <Link
-              href="/"
-              className="p-2 rounded-lg bg-white/10 border border-white/10 hover:bg-white/20 transition"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg bg-error/10 border border-error/20 text-error hover:bg-error/20 transition"
-              aria-label="Logout"
-            >
-              <LogOut className="w-5 h-5" />
+              {language === "ru" ? t("Русский", "Russian") : t("Английский", "English")}
             </button>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="px-4 py-10 max-w-7xl mx-auto space-y-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-4 shadow-lg shadow-black/20"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`p-2 rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <span
-                  className={`text-xs font-medium ${
-                    stat.change.startsWith("+") ? "text-success" : "text-error"
-                  }`}
-                >
-                  {stat.change}
-                </span>
-              </div>
-              <p className="text-2xl font-semibold text-white mb-1">{stat.value}</p>
-              <p className="text-xs text-white/60">{t(stat.label, stat.label)}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium text-white">
-            {t("Быстрые действия", "Quick actions")}
-          </h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
+          <nav className="space-y-1">
+            {[
+              { label: t("Панель управления", "Dashboard"), icon: LayoutDashboard, path: "/admin/dashboard", active: true },
+              { label: t("Инвентарь", "Inventory"), icon: Box, path: "/admin/inventory" },
+              { label: t("Заказы", "Orders"), icon: ShoppingBag, path: "/admin/orders" },
+              { label: t("Клиенты", "Customers"), icon: User2, path: "/admin/users" },
+              { label: t("Настройки", "Settings"), icon: Settings, path: "/admin/analytics" },
+            ].map((item) => (
               <Link
-                key={index}
-                href={action.path}
-                className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-4 hover:border-white/30 hover:bg-white/20 transition shadow-lg shadow-black/10"
+                key={item.path}
+                href={item.path}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition ${
+                  item.active
+                    ? "bg-primary/10 text-primary"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
               >
-                <div
-                  className={`inline-flex p-2 rounded-xl mb-3 ${
-                    action.color === "primary"
-                      ? "bg-primary/10 text-primary"
-                      : action.color === "accent"
-                      ? "bg-accent/10 text-accent"
-                      : action.color === "success"
-                      ? "bg-success/10 text-success"
-                      : "bg-warning/10 text-warning"
-                  }`}
-                >
-                  <action.icon className="w-5 h-5" />
-                </div>
-                <h4 className="mb-1 text-sm font-semibold text-white">
-                  {t(action.label, action.label)}
-                </h4>
-                <p className="text-xs text-white/70 leading-relaxed">
-                  {t(action.description, action.description)}
-                </p>
+                <item.icon className="w-5 h-5" />
+                {item.label}
               </Link>
             ))}
-          </div>
-        </div>
+          </nav>
 
-        {/* Recent Activity */}
-        <div className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-5 shadow-lg shadow-black/10">
-          <h3 className="mb-4 text-lg font-medium text-white">
-            {t("Последние события", "Recent activity")}
-          </h3>
-          <div className="space-y-3">
-            {[
-              { action: t("Новый заказ", "New order"), details: "#BB-123456 · 15 990 ₽", time: t("5 мин назад", "5m ago") },
-              { action: t("Товар обновлен", "Product updated"), details: "Chelsea Black · price updated", time: t("23 мин назад", "23m ago") },
-              { action: t("Низкий остаток", "Low stock"), details: "Oxford Brown · осталось 2 шт", time: t("1 час назад", "1h ago") },
-              { action: t("Заказ отправлен", "Order shipped"), details: "#BB-123440 · курьер", time: t("2 часа назад", "2h ago") },
-            ].map((event, index) => (
+          <div className="mt-auto pt-8">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-red-500 text-sm font-semibold hover:text-red-600"
+            >
+              <LogOut className="w-4 h-4" />
+              {t("Выйти", "Logout")}
+            </button>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+            {stats.map((stat, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 pb-3 border-b border-white/10 last:border-0"
+                className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4 flex flex-col gap-3"
               >
-                <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">{event.action}</p>
-                  <p className="text-xs text-white/70">{event.details}</p>
+                <div className="flex items-start justify-between">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${stat.bgColor}`}>
+                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  </div>
+                  <span
+                    className={`text-xs font-semibold ${
+                      stat.change.startsWith("+") ? "text-success" : "text-error"
+                    }`}
+                  >
+                    {stat.change}
+                  </span>
                 </div>
-                <span className="text-xs text-white/50">{event.time}</span>
+                <div>
+                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                  <p className="text-sm text-gray-500">{stat.label}</p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+
+          {/* Recent products */}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t("Последние товары", "Latest products")}
+              </h3>
+              <Link href="/admin/inventory" className="text-primary text-sm font-semibold hover:underline">
+                {t("Показать все", "View all")}
+              </Link>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {recentProducts.map((product) => (
+                <div key={product.id} className="flex items-center gap-4 px-4 py-4">
+                  <div className="h-14 w-14 rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={product.images[0] || "https://via.placeholder.com/80"}
+                      alt={product.name_ru}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {language === "ru" ? product.name_ru : product.name_en}
+                    </p>
+                    <p className="text-xs text-gray-500 capitalize">{product.category}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {product.price.toLocaleString(language === "ru" ? "ru-RU" : "en-US")} ₽
+                    </p>
+                    <p className="text-xs text-green-600">{t("В наличии", "In stock")}</p>
+                  </div>
+                </div>
+              ))}
+              {recentProducts.length === 0 && (
+                <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                  {t("Нет товаров для отображения", "No products to show")}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
