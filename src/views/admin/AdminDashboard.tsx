@@ -13,10 +13,12 @@ import {
 } from "lucide-react";
 import { loadAdminProducts } from "@/data/adminStore";
 import { Product } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function AdminDashboard() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -76,11 +78,11 @@ export function AdminDashboard() {
 
   const quickActions = [
     {
-      label: "Управление товарами",
-      description: "Добавить, изменить или удалить товары",
-      icon: Package,
-      path: "/admin/inventory",
-      color: "primary",
+        label: "Управление товарами",
+        description: "Добавить, изменить или удалить товары",
+        icon: Package,
+        path: "/admin/inventory",
+        color: "primary",
     },
     {
       label: "Заказы",
@@ -111,19 +113,35 @@ export function AdminDashboard() {
       <header className="border-b border-white/10 backdrop-blur-md bg-white/5">
         <div className="px-4 py-5 max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Админ-панель</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t("Админ-панель", "Admin Panel")}
+            </h1>
             <p className="text-sm text-white/60">BARCELO BIAGI · Иваново</p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setLanguage(language === "ru" ? "en" : "ru")}
+              className="px-3 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/20 transition text-sm font-semibold"
+            >
+              {language === "ru" ? "RU" : "EN"}
+            </button>
+            <Link
+              href="/"
+              className="px-3 py-2 rounded-lg bg-white text-slate-900 font-semibold hover:bg-slate-100 transition shadow"
+            >
+              {t("Вернуться в магазин", "View store")}
+            </Link>
             <Link
               href="/"
               className="p-2 rounded-lg bg-white/10 border border-white/10 hover:bg-white/20 transition"
+              aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </Link>
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg bg-error/10 border border-error/20 text-error hover:bg-error/20 transition"
+              aria-label="Logout"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -153,14 +171,16 @@ export function AdminDashboard() {
                 </span>
               </div>
               <p className="text-2xl font-semibold text-white mb-1">{stat.value}</p>
-              <p className="text-xs text-white/60">{stat.label}</p>
+              <p className="text-xs text-white/60">{t(stat.label, stat.label)}</p>
             </div>
           ))}
         </div>
 
         {/* Quick Actions */}
         <div className="space-y-3">
-          <h3 className="text-lg font-medium text-white">Быстрые действия</h3>
+          <h3 className="text-lg font-medium text-white">
+            {t("Быстрые действия", "Quick actions")}
+          </h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, index) => (
               <Link
@@ -181,8 +201,12 @@ export function AdminDashboard() {
                 >
                   <action.icon className="w-5 h-5" />
                 </div>
-                <h4 className="mb-1 text-sm font-semibold text-white">{action.label}</h4>
-                <p className="text-xs text-white/70 leading-relaxed">{action.description}</p>
+                <h4 className="mb-1 text-sm font-semibold text-white">
+                  {t(action.label, action.label)}
+                </h4>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  {t(action.description, action.description)}
+                </p>
               </Link>
             ))}
           </div>
@@ -190,13 +214,15 @@ export function AdminDashboard() {
 
         {/* Recent Activity */}
         <div className="rounded-2xl border border-white/10 bg-white/10 backdrop-blur-lg p-5 shadow-lg shadow-black/10">
-          <h3 className="mb-4 text-lg font-medium text-white">Последние события</h3>
+          <h3 className="mb-4 text-lg font-medium text-white">
+            {t("Последние события", "Recent activity")}
+          </h3>
           <div className="space-y-3">
             {[
-              { action: "Новый заказ", details: "#BB-123456 на сумму 15 990 ₽", time: "5 мин назад" },
-              { action: "Товар обновлен", details: "Ботинки Chelsea Black - изменена цена", time: "23 мин назад" },
-              { action: "Низкий остаток", details: "Туфли Oxford Brown - осталось 2 шт", time: "1 час назад" },
-              { action: "Заказ отправлен", details: "#BB-123440 - доставка курьером", time: "2 часа назад" },
+              { action: t("Новый заказ", "New order"), details: "#BB-123456 · 15 990 ₽", time: t("5 мин назад", "5m ago") },
+              { action: t("Товар обновлен", "Product updated"), details: "Chelsea Black · price updated", time: t("23 мин назад", "23m ago") },
+              { action: t("Низкий остаток", "Low stock"), details: "Oxford Brown · осталось 2 шт", time: t("1 час назад", "1h ago") },
+              { action: t("Заказ отправлен", "Order shipped"), details: "#BB-123440 · курьер", time: t("2 часа назад", "2h ago") },
             ].map((event, index) => (
               <div
                 key={index}

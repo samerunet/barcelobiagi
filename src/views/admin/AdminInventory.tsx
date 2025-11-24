@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { loadAdminProducts } from "@/data/adminStore";
 import { Product } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'low_stock' | 'featured';
 type AdminProduct = Product & { status?: 'active' | 'inactive'; featured?: boolean };
@@ -25,6 +26,7 @@ export function AdminInventory() {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const { language, setLanguage, t } = useLanguage();
 
   // Load products from local storage (or mock fallback)
   useEffect(() => {
@@ -93,8 +95,10 @@ export function AdminInventory() {
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-xl font-semibold">Управление товарами</h1>
-                <p className="text-sm text-white/60">{filteredProducts.length} товаров</p>
+                <h1 className="text-xl font-semibold">{t("Управление товарами", "Inventory management")}</h1>
+                <p className="text-sm text-white/60">
+                  {t("Товаров", "Items")}: {filteredProducts.length}
+                </p>
               </div>
             </div>
             <button
@@ -102,8 +106,25 @@ export function AdminInventory() {
               className="inline-flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/30 px-4 py-2 text-sm font-semibold text-white hover:bg-primary/30 transition shadow-lg shadow-black/10"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Добавить</span>
+              <span className="hidden sm:inline">{t("Добавить", "Add")}</span>
             </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLanguage(language === "ru" ? "en" : "ru")}
+                className="px-3 py-2 rounded-lg border border-white/15 bg-white/10 hover:bg-white/20 transition text-sm font-semibold"
+              >
+                {language === "ru" ? "RU" : "EN"}
+              </button>
+              <Link
+                href="/"
+                className="px-3 py-2 rounded-lg bg-white text-slate-900 font-semibold hover:bg-slate-100 transition shadow"
+              >
+                {t("В магазин", "View store")}
+              </Link>
+            </div>
           </div>
 
           {/* Search */}
@@ -113,7 +134,7 @@ export function AdminInventory() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Поиск по названию или SKU..."
+              placeholder={t("Поиск по названию или SKU...", "Search by name or SKU...")}
               className="w-full rounded-xl border border-white/10 bg-white/10 backdrop-blur-md pl-10 pr-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-white/30"
             />
           </div>
@@ -121,11 +142,11 @@ export function AdminInventory() {
           {/* Filters */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             {[
-              { key: 'all', label: 'Все', count: products.length },
-              { key: 'active', label: 'Активные', count: products.filter(p => p.status === 'active').length },
-              { key: 'inactive', label: 'Скрытые', count: products.filter(p => p.status === 'inactive').length },
-              { key: 'low_stock', label: 'Мало на складе', count: products.filter(p => p.stock_total < p.stock_low_threshold).length },
-              { key: 'featured', label: 'Избранные', count: products.filter(p => p.featured).length },
+              { key: 'all', label: t('Все', 'All'), count: products.length },
+              { key: 'active', label: t('Активные', 'Active'), count: products.filter(p => p.status === 'active').length },
+              { key: 'inactive', label: t('Скрытые', 'Hidden'), count: products.filter(p => p.status === 'inactive').length },
+              { key: 'low_stock', label: t('Мало на складе', 'Low stock'), count: products.filter(p => p.stock_total < p.stock_low_threshold).length },
+              { key: 'featured', label: t('Избранные', 'Featured'), count: products.filter(p => p.featured).length },
             ].map(filter => (
               <button
                 key={filter.key}
@@ -154,7 +175,7 @@ export function AdminInventory() {
               className="w-4 h-4 accent-primary"
             />
             <span className="text-sm text-white/80">
-              Выбрать все ({selectedProducts.size} из {filteredProducts.length})
+              {t("Выбрать все", "Select all")} ({selectedProducts.size} / {filteredProducts.length})
             </span>
           </label>
         </div>
@@ -198,7 +219,7 @@ export function AdminInventory() {
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="flex-1">
                         <h4 className="text-sm font-semibold text-white mb-0.5 line-clamp-1">
-                          {product.name_ru}
+                          {language === "ru" ? product.name_ru : product.name_en}
                         </h4>
                         <p className="text-xs text-white/60">{product.sku}</p>
                       </div>
@@ -220,14 +241,14 @@ export function AdminInventory() {
                           ? 'bg-success/10 text-success'
                           : 'bg-white/10 text-white/70'
                       }`}>
-                        {product.status === 'active' ? 'Активен' : 'Скрыт'}
+                        {product.status === 'active' ? t("Активен", "Active") : t("Скрыт", "Hidden")}
                       </span>
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         product.stock_total < product.stock_low_threshold
                           ? 'bg-error/10 text-error'
                           : 'bg-white/10 text-white/70'
                       }`}>
-                        Склад: {product.stock_total}
+                        {t("Склад", "Stock")}: {product.stock_total}
                       </span>
                       <span className="px-2 py-0.5 bg-white/10 text-white/70 rounded text-xs font-medium capitalize">
                         {product.category}
@@ -236,7 +257,7 @@ export function AdminInventory() {
 
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-semibold text-white">
-                        {product.price.toLocaleString('ru-RU')} ₽
+                        {product.price.toLocaleString(language === "ru" ? 'ru-RU' : 'en-US')} ₽
                       </p>
                       <button
                         onClick={() => router.push(`/admin/inventory/edit/${product.id}`)}
@@ -255,7 +276,7 @@ export function AdminInventory() {
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12 text-white/70">
-            <p>Товары не найдены</p>
+            <p>{t("Товары не найдены", "No products found")}</p>
           </div>
         )}
       </div>
