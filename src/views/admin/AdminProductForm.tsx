@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, X } from "lucide-react";
-import { mockProducts } from "../../data/mockData";
+import { loadAdminProducts, normalizeSizes, upsertAdminProduct } from "@/data/adminStore";
 import { ProductImageUploader } from "@/app/admin/products/_components/product-image-uploader";
+import { Product } from "@/types";
 
 export function AdminProductForm() {
   const router = useRouter();
@@ -12,23 +13,22 @@ export function AdminProductForm() {
   const id = Array.isArray(idParam) ? idParam[0] : idParam;
   const isEdit = Boolean(id);
 
-  // Load existing product if editing
-  const existingProduct = isEdit ? mockProducts.find((p) => p.id === id) : null;
+  const [existingProduct, setExistingProduct] = useState<Product | null>(null);
 
   const [formData, setFormData] = useState({
-    name_ru: existingProduct?.name_ru || "",
-    name_en: existingProduct?.name_en || "",
-    description_ru: existingProduct?.description_ru || "",
-    description_en: existingProduct?.description_en || "",
-    category: existingProduct?.category || "men",
-    price: existingProduct?.price.toString() || "",
-    sizes: existingProduct?.sizes.map((s) => s.size).join(", ") || "",
-    stock: existingProduct?.stock_total.toString() || "",
-    sku: existingProduct?.sku || "",
-    material_ru: existingProduct?.material_ru || "",
-    material_en: existingProduct?.material_en || "",
-    color_ru: existingProduct?.color_ru || "",
-    color_en: existingProduct?.color_en || "",
+    name_ru: "",
+    name_en: "",
+    description_ru: "",
+    description_en: "",
+    category: "men",
+    price: "",
+    sizes: "",
+    stock: "",
+    sku: "",
+    material_ru: "",
+    material_en: "",
+    color_ru: "",
+    color_en: "",
     status: "active",
     featured: false,
   });
@@ -49,22 +49,67 @@ export function AdminProductForm() {
     [existingProduct?.images, id],
   );
 
-  const [images, setImages] = useState<UploadedImage[]>(initialImages);
+  const [images, setImages] = useState<UploadedImage[]>([]);
+
+  useEffect(() => {
+    const products = loadAdminProducts();
+    if (isEdit) {
+      const found = products.find((p) => p.id === id) || null;
+      setExistingProduct(found);
+      if (found) {
+        setFormData({
+          name_ru: found.name_ru,
+          name_en: found.name_en,
+          description_ru: found.description_ru,
+          description_en: found.description_en,
+          category: found.category,
+          price: found.price.toString(),
+          sizes: found.sizes.map((s) => s.size).join(", "),
+          stock: found.stock_total.toString(),
+          sku: found.sku,
+          material_ru: found.material_ru,
+          material_en: found.material_en,
+          color_ru: found.color_ru,
+          color_en: found.color_en,
+          status: "active",
+          featured: false,
+        });
+        setImages(
+          (found.images || []).map((url) => ({
+            fileUrl: url,
+            fileKey: url,
+            productId: id ?? null,
+          })),
+        );
+      }
+    } else {
+      // Reset for create
+      setExistingProduct(null);
+      setImages([]);
+    }
+  }, [id, isEdit]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // API NOTE: POST /api/products or PUT /api/products/:id
-    // Send formData and images to kassa.primarket.ru API
-    
-    const payload = {
+    const price = parseFloat(formData.price) || 0;
+    const stock = parseInt(formData.stock || "0", 10);
+    const sizes = normalizeSizes(formData.sizes, stock);
+
+    const payload: Product = {
+      id: isEdit && id ? id : Date.now().toString(),
       ...formData,
+      price,
+      stock_total: stock,
+      stock_low_threshold: Math.max(1, Math.floor(stock * 0.1)),
+      old_price: undefined,
+      currency: "RUB",
       images: images.map((img) => img.fileUrl),
+      sizes,
+      tags: [],
     };
 
-    console.log("Saving product:", payload);
-    
-    // Navigate back to inventory
+    upsertAdminProduct(payload);
     router.push("/admin/inventory");
   };
 

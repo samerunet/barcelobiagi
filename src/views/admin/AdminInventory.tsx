@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,9 +12,11 @@ import {
   MoreVertical,
   Check,
 } from "lucide-react";
-import { mockProducts } from "../../data/mockData";
+import { loadAdminProducts } from "@/data/adminStore";
+import { Product } from "@/types";
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'low_stock' | 'featured';
+type AdminProduct = Product & { status?: 'active' | 'inactive'; featured?: boolean };
 
 export function AdminInventory() {
   const router = useRouter();
@@ -22,15 +24,19 @@ export function AdminInventory() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
 
-  // Mock product data with admin fields
-  const products = mockProducts.map(p => ({
-    ...p,
-    status: Math.random() > 0.2 ? 'active' : 'inactive',
-    featured: Math.random() > 0.7,
-  }));
+  // Load products from local storage (or mock fallback)
+  useEffect(() => {
+    const loaded = loadAdminProducts().map((p) => ({
+      ...p,
+      status: "active" as const,
+      featured: false,
+    }));
+    setProducts(loaded);
+  }, []);
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = useMemo(() => products.filter(product => {
     const matchesSearch = product.name_ru.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.sku.includes(searchQuery);
@@ -43,7 +49,7 @@ export function AdminInventory() {
       filterStatus === 'featured' ? product.featured : true;
 
     return matchesSearch && matchesFilter;
-  });
+  }), [products, searchQuery, filterStatus]);
 
   const toggleSelectProduct = (id: string) => {
     const newSelected = new Set(selectedProducts);
@@ -181,7 +187,7 @@ export function AdminInventory() {
                   {/* Image */}
                   <div className="flex-shrink-0">
                     <img
-                      src={product.images[0]}
+                      src={product.images[0] || "https://via.placeholder.com/160"}
                       alt={product.name_ru}
                       className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                     />
