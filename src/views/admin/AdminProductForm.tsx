@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { mockProducts } from "../../data/mockData";
+import { ProductImageUploader } from "@/app/admin/products/_components/product-image-uploader";
 
 export function AdminProductForm() {
   const router = useRouter();
@@ -12,27 +13,43 @@ export function AdminProductForm() {
   const isEdit = Boolean(id);
 
   // Load existing product if editing
-  const existingProduct = isEdit ? mockProducts.find(p => p.id === id) : null;
+  const existingProduct = isEdit ? mockProducts.find((p) => p.id === id) : null;
 
   const [formData, setFormData] = useState({
-    name_ru: existingProduct?.name_ru || '',
-    name_en: existingProduct?.name_en || '',
-    description_ru: existingProduct?.description_ru || '',
-    description_en: existingProduct?.description_en || '',
-    category: existingProduct?.category || 'men',
-    price: existingProduct?.price.toString() || '',
-    sizes: existingProduct?.sizes.map(s => s.size).join(', ') || '',
-    stock: existingProduct?.stock_total.toString() || '',
-    sku: existingProduct?.sku || '',
-    material_ru: existingProduct?.material_ru || '',
-    material_en: existingProduct?.material_en || '',
-    color_ru: existingProduct?.color_ru || '',
-    color_en: existingProduct?.color_en || '',
-    status: 'active',
+    name_ru: existingProduct?.name_ru || "",
+    name_en: existingProduct?.name_en || "",
+    description_ru: existingProduct?.description_ru || "",
+    description_en: existingProduct?.description_en || "",
+    category: existingProduct?.category || "men",
+    price: existingProduct?.price.toString() || "",
+    sizes: existingProduct?.sizes.map((s) => s.size).join(", ") || "",
+    stock: existingProduct?.stock_total.toString() || "",
+    sku: existingProduct?.sku || "",
+    material_ru: existingProduct?.material_ru || "",
+    material_en: existingProduct?.material_en || "",
+    color_ru: existingProduct?.color_ru || "",
+    color_en: existingProduct?.color_en || "",
+    status: "active",
     featured: false,
   });
 
-  const [images, setImages] = useState<string[]>(existingProduct?.images || []);
+  type UploadedImage = {
+    fileUrl: string;
+    fileKey: string;
+    productId?: string | null;
+  };
+
+  const initialImages: UploadedImage[] = useMemo(
+    () =>
+      (existingProduct?.images || []).map((url) => ({
+        fileUrl: url,
+        fileKey: url,
+        productId: id ?? null,
+      })),
+    [existingProduct?.images, id],
+  );
+
+  const [images, setImages] = useState<UploadedImage[]>(initialImages);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,35 +57,28 @@ export function AdminProductForm() {
     // API NOTE: POST /api/products or PUT /api/products/:id
     // Send formData and images to kassa.primarket.ru API
     
-    console.log('Saving product:', formData, images);
+    const payload = {
+      ...formData,
+      images: images.map((img) => img.fileUrl),
+    };
+
+    console.log("Saving product:", payload);
     
     // Navigate back to inventory
-    router.push('/admin/inventory');
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      // In production, upload to server and get URLs
-      // For now, create object URLs
-      Array.from(files).forEach(file => {
-        const url = URL.createObjectURL(file);
-        setImages(prev => [...prev, url]);
-      });
-    }
+    router.push("/admin/inventory");
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const categories = [
-    { ru: 'Мужская обувь', en: 'Men\'s Shoes' },
-    { ru: 'Женская обувь', en: 'Women\'s Shoes' },
-    { ru: 'Ботинки', en: 'Boots' },
-    { ru: 'Туфли', en: 'Dress Shoes' },
-    { ru: 'Кроссовки', en: 'Sneakers' },
-    { ru: 'Аксессуары', en: 'Accessories' },
+    { ru: "Мужская обувь", en: "Men's Shoes" },
+    { ru: "Женская обувь", en: "Women's Shoes" },
+    { ru: "Ботинки", en: "Boots" },
+    { ru: "Туфли", en: "Dress Shoes" },
+    { ru: "Кроссовки", en: "Sneakers" },
+    { ru: "Аксессуары", en: "Accessories" },
   ];
 
   return (
@@ -105,7 +115,7 @@ export function AdminProductForm() {
             {images.map((img, index) => (
               <div key={index} className="relative aspect-square">
                 <img
-                  src={img}
+                  src={img.fileUrl}
                   alt={`Product ${index + 1}`}
                   className="w-full h-full object-cover rounded-lg border border-gray-200"
                 />
@@ -124,22 +134,16 @@ export function AdminProductForm() {
               </div>
             ))}
             
-            {/* Upload button */}
-            <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-              <Upload className="w-6 h-6 text-gray-400 mb-1" />
-              <span className="text-xs text-gray-500">Загрузить</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
+            <div className="aspect-square">
+              <ProductImageUploader
+                productId={id}
+                onImagesChange={(uploaded) => setImages(uploaded)}
               />
-            </label>
+            </div>
           </div>
           
           <p className="text-xs text-gray-500">
-            Первое изображение будет использоваться как г��авное. Поддерживаются JPG, PNG.
+            Первое изображение будет использоваться как главное. Поддерживаются JPG, PNG.
           </p>
         </div>
 
