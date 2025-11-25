@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -5,6 +7,13 @@ import { ArrowLeft, X } from "lucide-react";
 import { loadAdminProducts, normalizeSizes, upsertAdminProduct } from "@/data/adminStore";
 import { ProductImageUploader } from "@/app/admin/products/_components/product-image-uploader";
 import { Product } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
+
+type UploadedImage = {
+  fileUrl: string;
+  fileKey: string;
+  productId?: string | null;
+};
 
 export function AdminProductForm() {
   const router = useRouter();
@@ -12,6 +21,7 @@ export function AdminProductForm() {
   const idParam = params?.id;
   const id = Array.isArray(idParam) ? idParam[0] : idParam;
   const isEdit = Boolean(id);
+  const { t, language, setLanguage } = useLanguage();
 
   const [existingProduct, setExistingProduct] = useState<Product | null>(null);
 
@@ -32,12 +42,6 @@ export function AdminProductForm() {
     status: "active",
     featured: false,
   });
-
-  type UploadedImage = {
-    fileUrl: string;
-    fileKey: string;
-    productId?: string | null;
-  };
 
   const initialImages: UploadedImage[] = useMemo(
     () =>
@@ -151,38 +155,54 @@ export function AdminProductForm() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/inventory"
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold">
-                {isEdit ? 'Редактировать товар' : 'Добавить товар'}
-              </h1>
-              {isEdit && <p className="text-sm text-gray-500">{formData.sku}</p>}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/inventory"
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="text-xl font-bold">
+                  {isEdit ? t("Редактировать товар", "Edit product") : t("Добавить товар", "Add product")}
+                </h1>
+                {isEdit && <p className="text-sm text-gray-500">{formData.sku}</p>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLanguage(language === "ru" ? "en" : "ru")}
+                className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                {language === "ru" ? "RU" : "EN"}
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition"
+              >
+                {t("Сохранить", "Save")}
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="px-4 py-6 max-w-2xl mx-auto">
+      <form onSubmit={handleSubmit} className="px-4 py-6 max-w-2xl mx-auto space-y-4">
         {/* Images */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Изображения товара
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <label className="block text-sm font-semibold text-gray-900 mb-3">
+            {t("Изображения товара", "Product images")}
           </label>
           
-          <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             {images.map((img, index) => {
               const isMain = img.fileKey === mainImageKey || (!mainImageKey && index === 0);
               return (
                 <div
                   key={img.fileKey}
-                  className="relative aspect-square rounded-xl border border-white/40 bg-white/40 backdrop-blur-md shadow-sm overflow-hidden"
+                  className="relative aspect-square rounded-xl border border-gray-200 bg-gray-50 overflow-hidden"
                 >
                   <img
                     src={img.fileUrl}
@@ -199,22 +219,22 @@ export function AdminProductForm() {
 
                   {isMain ? (
                     <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-white rounded text-xs font-semibold shadow">
-                      Главное фото
+                      {t("Главное фото", "Main photo")}
                     </span>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setMainImageKey(img.fileKey)}
-                      className="absolute bottom-2 left-2 px-2 py-0.5 bg-white/80 text-gray-900 rounded text-xs font-medium shadow hover:bg-white"
+                      className="absolute bottom-2 left-2 px-2 py-0.5 bg-white text-gray-900 rounded text-xs font-medium shadow hover:bg-gray-100"
                     >
-                      Сделать главным
+                      {t("Сделать главным", "Set as main")}
                     </button>
                   )}
                 </div>
               );
             })}
             
-            <div className="aspect-square rounded-xl border border-dashed border-white/50 bg-white/30 backdrop-blur-md flex items-center justify-center">
+            <div className="aspect-square rounded-xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center p-2">
               <ProductImageUploader
                 productId={id}
                 onImagesChange={(uploaded) => {
@@ -228,18 +248,20 @@ export function AdminProductForm() {
           </div>
           
           <p className="text-xs text-gray-500">
-            Первое изображение будет использоваться как главное. Поддерживаются JPG, PNG.
+            {t("Первое изображение будет использоваться как главное. Поддерживаются JPG, PNG.", "The first image will be used as main. JPG, PNG supported.")}
           </p>
         </div>
 
         {/* Basic Info */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-          <h3 className="mb-4">Основная информация</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("Основная информация", "Basic information")}
+          </h3>
           
-          <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Название (RU) *
+                {t("Название (RU)", "Name (RU)")} *
               </label>
               <input
                 type="text"
@@ -247,13 +269,13 @@ export function AdminProductForm() {
                 value={formData.name_ru}
                 onChange={(e) => setFormData({ ...formData, name_ru: e.target.value })}
                 className="input"
-                placeholder="Ботинки Chelsea Black"
+                placeholder={t("Ботинки Chelsea Black", "Chelsea Boots Black")}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Название (EN) *
+                {t("Название (EN)", "Name (EN)") }*
               </label>
               <input
                 type="text"
@@ -264,22 +286,24 @@ export function AdminProductForm() {
                 placeholder="Chelsea Boots Black"
               />
             </div>
+          </div>
 
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Описание (RU)
+                {t("Описание (RU)", "Description (RU)")}
               </label>
               <textarea
                 value={formData.description_ru}
                 onChange={(e) => setFormData({ ...formData, description_ru: e.target.value })}
                 className="input min-h-24 resize-none"
-                placeholder="Классические ботинки челси из натуральной кожи..."
+                placeholder={t("Классические ботинки челси из натуральной кожи...", "Classic Chelsea boots made from genuine leather...")}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Описание (EN)
+                {t("Описание (EN)", "Description (EN)")}
               </label>
               <textarea
                 value={formData.description_en}
@@ -292,25 +316,24 @@ export function AdminProductForm() {
         </div>
 
         {/* Category & Price */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-          <h3 className="mb-4">Категория и цена</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("Категория и цена", "Category and price")}
+          </h3>
           
-          <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Категория *
+                {t("Категория", "Category")} *
               </label>
               <select
                 required
                 value={formData.category}
                 onChange={(e) => {
-                  const category = categories.find(c => c.en === e.target.value);
-                  if (category) {
-                    setFormData({
-                      ...formData,
-                      category: category.en,
-                    });
-                  }
+                  setFormData({
+                    ...formData,
+                    category: e.target.value,
+                  });
                 }}
                 className="input"
               >
@@ -322,7 +345,7 @@ export function AdminProductForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Цена (₽) *
+                {t("Цена (₽)", "Price (₽)") }*
               </label>
               <input
                 type="number"
@@ -337,10 +360,12 @@ export function AdminProductForm() {
         </div>
 
         {/* Inventory */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-          <h3 className="mb-4">Склад и размеры</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("Склад и размеры", "Stock and sizes")}
+          </h3>
           
-          <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {!isEdit && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -354,14 +379,14 @@ export function AdminProductForm() {
                   placeholder="BB-00001"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Оставьте пустым для автоматической генерации
+                  {t("Оставьте пустым для автоматической генерации", "Leave empty to auto-generate")}
                 </p>
               </div>
             )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Доступные размеры *
+                {t("Доступные размеры", "Available sizes")} *
               </label>
               <input
                 type="text"
@@ -372,13 +397,13 @@ export function AdminProductForm() {
                 placeholder="39, 40, 41, 42, 43, 44"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Введите размеры через з��пятую
+                {t("Введите размеры через запятую", "Enter sizes separated by commas")}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Общий остаток на складе
+                {t("Общий остаток на складе", "Total stock")}
               </label>
               <input
                 type="number"
@@ -392,76 +417,51 @@ export function AdminProductForm() {
         </div>
 
         {/* Settings */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-          <h3 className="mb-4">Настройки</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("Настройки", "Settings")}
+          </h3>
           
-          <div className="space-y-4">
-            <label className="flex items-center justify-between cursor-pointer">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Статус товара</p>
-                <p className="text-xs text-gray-500">Показывать товар на сайте</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFormData({ 
-                  ...formData, 
-                  status: formData.status === 'active' ? 'inactive' : 'active' 
-                })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.status === 'active' ? 'bg-primary' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    formData.status === 'active' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={formData.featured}
+                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                className="w-4 h-4 accent-primary"
+              />
+              <span className="text-sm text-gray-800">{t("Избранный товар", "Featured product")}</span>
             </label>
 
-            <label className="flex items-center justify-between cursor-pointer">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Избранный товар</p>
-                <p className="text-xs text-gray-500">Показывать на главной странице</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.featured ? 'bg-warning' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    formData.featured ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={formData.status === "active"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    status: e.target.checked ? "active" : "inactive",
+                  })
+                }
+                className="w-4 h-4 accent-primary"
+              />
+              <span className="text-sm text-gray-800">{t("Активен в каталоге", "Visible in catalog")}</span>
             </label>
           </div>
+        </div>
+
+        {/* Submit */}
+        <div className="flex items-center justify-end">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition"
+          >
+            {t("Сохранить", "Save")}
+          </button>
         </div>
       </form>
-
-      {/* Fixed Bottom Actions */}
-      <div className="mobile-bottom-bar">
-        <div className="px-4 py-3">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => router.push('/admin/inventory')}
-              className="btn-secondary"
-            >
-              Отменить
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="btn-primary"
-            >
-              {isEdit ? 'Сохранить' : 'Добавить товар'}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
+
+export default AdminProductForm;
